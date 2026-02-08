@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Customer List{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Customer List</h1>
+    
+    <div class="mb-3">
+        <a href="{{ url_for('test_pages.customers') }}" class="btn btn-secondary">← Back to Customer Management</a>
+    </div>
+    
+    {% if customers %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Member ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Branch</th>
+                            <th>Join Date</th>
+                            <th>Status</th>
+                            <th>Health Info</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr>
+                            <td><strong>{{ customer.member_id }}</strong></td>
+                            <td>{{ customer.user.first_name }} {{ customer.user.last_name }}</td>
+                            <td>{{ customer.user.email }}</td>
+                            <td>{{ customer.user.phone or '-' }}</td>
+                            <td>{{ customer.branch.name }}</td>
+                            <td>{{ customer.join_date.strftime('%Y-%m-%d') if customer.join_date else '-' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if customer.user.is_active else 'secondary' }}">
+                                    {{ 'Active' if customer.user.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if customer.height_cm and customer.weight_kg %}
+                                    H: {{ customer.height_cm }}cm<br>
+                                    W: {{ customer.weight_kg }}kg
+                                {% else %}
+                                    <span class="text-muted">No data</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <h4>No Customers Found</h4>
+        <p>No customers found for your accessible branches. Create some customers to see them here.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.badge {
+    font-size: 0.75em;
+}
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

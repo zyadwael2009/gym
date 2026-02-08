@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>📊 Test Dashboard</h2>
+
+{% if user %}
+<div style="background: #e9ecef; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+    <h3>👤 Current User</h3>
+    <p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+    <p><strong>Role:</strong> {{ user.role }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    {% if user.branch_id %}<p><strong>Branch ID:</strong> {{ user.branch_id }}</p>{% endif %}
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+    
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f8f9fa;">
+        <h4>👥 Customer Management</h4>
+        <div style="margin-top: 10px;">
+            <a href="{{ url_for('test_pages.customers') }}" class="btn" style="display: block; margin: 5px 0;">Create Customer</a>
+            <a href="{{ url_for('test_pages.list_customers') }}" class="btn" style="display: block; margin: 5px 0;">View Customers</a>
+        </div>
+    </div>
+    
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f8f9fa;">
+        <h4>📋 Subscriptions</h4>
+        <div style="margin-top: 10px;">
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Create Subscription</a>
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">View Subscriptions</a>
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Manage Plans</a>
+        </div>
+    </div>
+    
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f8f9fa;">
+        <h4>💳 Payments</h4>
+        <div style="margin-top: 10px;">
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Process Payment</a>
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">View Payments</a>
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Payment Summary</a>
+        </div>
+    </div>
+    
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f8f9fa;">
+        <h4>📊 Attendance</h4>
+        <div style="margin-top: 10px;">
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Check-in Customer</a>
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">View Attendance</a>
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Biometric Test</a>
+        </div>
+    </div>
+    
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f8f9fa;">
+        <h4>📞 Complaints</h4>
+        <div style="margin-top: 10px;">
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Create Complaint</a>
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">View Complaints</a>
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Complaint Summary</a>
+        </div>
+    </div>
+    
+    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f8f9fa;">
+        <h4>🏢 Branch Management</h4>
+        <div style="margin-top: 10px;">
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">View Branches</a>
+            {% if user.role == 'owner' %}
+            <a href="#" class="btn" style="display: block; margin: 5px 0;">Create Branch</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 30px; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+    <h3>🔍 API Data Viewers</h3>
+    <p>Click these links to view raw JSON data from API endpoints:</p>
+    
+    <div style="margin: 15px 0;">
+        <a href="#" class="btn" style="margin: 5px;">Dashboard Data</a>
+        <a href="#" class="btn" style="margin: 5px;">System Alerts</a>
+        <a href="#" class="btn" style="margin: 5px;">Customers JSON</a>
+        <a href="#" class="btn" style="margin: 5px;">Subscriptions JSON</a>
+        <a href="#" class="btn" style="margin: 5px;">Payments JSON</a>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning">
+    <p>No user session found. Please <a href="{{ url_for('test_pages.test_login') }}">login</a> first.</p>
+</div>
+{% endif %}
+{% endblock %}
