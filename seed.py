@@ -265,19 +265,32 @@ def create_test_payment(subscription, customer):
     print("\n💳 Creating test payment...")
 
     import random
-    transaction_ref = f"TXN-{datetime.utcnow().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+
+    # Generate unique payment number
+    payment_number = f"PAY-{date.today().year}-{random.randint(1000, 9999)}"
+
+    # Get the receptionist user ID (they process payments)
+    receptionist = User.query.filter_by(role='receptionist').first()
 
     payment = Payment(
+        payment_number=payment_number,
         customer_id=customer.id,
         subscription_id=subscription.id,
         branch_id=customer.branch_id,
         amount=subscription.actual_price,
         payment_method='cash',
-        payment_status='completed',
-        transaction_date=datetime.utcnow(),
-        transaction_reference=transaction_ref,
-        notes=f'Payment for {subscription.subscription_number}',
-        recorded_by=customer.branch.manager_id
+        status='completed',
+        service_type='subscription',
+        description=f'Payment for subscription {subscription.subscription_number}',
+        reference_number=f"REF-{random.randint(10000, 99999)}",
+        processed_by_id=receptionist.id if receptionist else 1
+    )
+
+    db.session.add(payment)
+    db.session.commit()
+
+    print(f"✅ Payment recorded: {payment.amount} EGP - {payment.payment_number}")
+    return payment
     )
 
     db.session.add(payment)
