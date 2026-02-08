@@ -35,8 +35,7 @@ def create_app(config_class=Config):
     
     # Register blueprints
     from app.api import auth_bp, branch_bp, customer_bp, subscription_bp, payment_bp, attendance_bp, dashboard_bp, complaint_bp
-    from app.test_pages.routes import test_bp
-    
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(branch_bp, url_prefix='/api/branches')
     app.register_blueprint(customer_bp, url_prefix='/api/customers')
@@ -45,8 +44,15 @@ def create_app(config_class=Config):
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
     app.register_blueprint(complaint_bp, url_prefix='/api/complaints')
-    app.register_blueprint(test_bp, url_prefix='/test')
-    
+
+    # Register test pages (optional - only for development)
+    try:
+        from app.test_pages.routes import test_bp
+        app.register_blueprint(test_bp, url_prefix='/test')
+    except ImportError:
+        # Test pages not available (missing dependencies like 'requests')
+        pass
+
     # Add health check endpoint
     @app.route('/')
     def health_check():
