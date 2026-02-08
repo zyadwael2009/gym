@@ -18,8 +18,18 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    CORS(app)
-    
+
+    # Configure CORS to allow all origins (for Flutter mobile app and web)
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
+
     # Import models to ensure they are registered
     from app.models import user, branch, customer, subscription, payment, attendance, complaint
     
@@ -37,12 +47,35 @@ def create_app(config_class=Config):
     app.register_blueprint(complaint_bp, url_prefix='/api/complaints')
     app.register_blueprint(test_bp, url_prefix='/test')
     
-    # Register CLI commands
-    from database import register_cli_commands
-    from seed_data import register_seed_command
-    register_cli_commands(app)
-    register_seed_command(app)
-    
+    # Add health check endpoint
+    @app.route('/')
+    def health_check():
+        return {
+            'status': 'success',
+            'message': 'Gym Management API is running!',
+            'version': '1.0.0',
+            'endpoints': {
+                'auth': '/api/auth',
+                'branches': '/api/branches',
+                'customers': '/api/customers',
+                'subscriptions': '/api/subscriptions',
+                'payments': '/api/payments',
+                'attendance': '/api/attendance',
+                'dashboard': '/api/dashboard',
+                'complaints': '/api/complaints'
+            }
+        }, 200
+
+    # Register CLI commands (only in development)
+    try:
+        from database import register_cli_commands
+        from seed_data import register_seed_command
+        register_cli_commands(app)
+        register_seed_command(app)
+    except ImportError:
+        # CLI commands not available (e.g., on PythonAnywhere)
+        pass
+
     return app
 
 if __name__ == '__main__':
