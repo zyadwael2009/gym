@@ -39,18 +39,32 @@ class Branch(db.Model):
     
     def to_dict(self):
         """Convert to dictionary"""
+        # Build full address string
+        address_parts = []
+        if self.address_line1:
+            address_parts.append(self.address_line1)
+        if self.address_line2:
+            address_parts.append(self.address_line2)
+        if self.city:
+            address_parts.append(self.city)
+        if self.state:
+            address_parts.append(self.state)
+        if self.pincode:
+            address_parts.append(self.pincode)
+
+        full_address = ', '.join(address_parts) if address_parts else None
+
         return {
             'id': self.id,
             'name': self.name,
             'code': self.code,
-            'address': {
-                'line1': self.address_line1,
-                'line2': self.address_line2,
-                'city': self.city,
-                'state': self.state,
-                'pincode': self.pincode,
-                'country': self.country
-            },
+            'address': full_address,  # Single string for frontend compatibility
+            'address_line1': self.address_line1,  # Keep individual fields for API
+            'address_line2': self.address_line2,
+            'city': self.city,
+            'state': self.state,
+            'pincode': self.pincode,
+            'country': self.country,
             'phone': self.phone,
             'email': self.email,
             'opening_time': self.opening_time.strftime('%H:%M') if self.opening_time else None,
