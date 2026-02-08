@@ -291,7 +291,6 @@ def create_test_payment(subscription, customer):
 
     print(f"✅ Payment recorded: {payment.amount} EGP - {payment.payment_number}")
     return payment
-    )
 
     db.session.add(payment)
     db.session.commit()
