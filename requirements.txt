@@ -8,3 +8,4 @@ sqlalchemy==2.0.21
 werkzeug==2.3.7
 python-dotenv==1.0.0
 click==8.1.7
+requests==2.31.0

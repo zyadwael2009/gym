@@ -12,18 +12,30 @@ def jwt_required_custom(f):
         try:
             # Verify JWT token
             verify_jwt_in_request()
-            user_id = get_jwt_identity()
+            identity = get_jwt_identity()
 
-            # Query user from database - convert string ID back to int
-            from app.database import db
-            current_user = db.session.get(User, int(user_id))
+            # Handle both formats: "customer_123" and "123"
+            if identity.startswith('customer_'):
+                # Customer format: "customer_123"
+                customer_id = int(identity.split('_')[1])
+                # Get the user via customer profile
+                from app.models.customer import Customer
+                customer = db.session.get(Customer, customer_id)
+                if not customer:
+                    print(f"JWT Error: Customer ID {customer_id} not found in database")
+                    return jsonify({'error': 'Customer not found'}), 401
+                current_user = customer.user
+            else:
+                # Staff format: "123"
+                user_id = int(identity)
+                current_user = db.session.get(User, user_id)
 
             if not current_user:
-                print(f"JWT Error: User ID {user_id} not found in database")
+                print(f"JWT Error: User with identity {identity} not found in database")
                 return jsonify({'error': 'User not found'}), 401
 
             if not current_user.is_active:
-                print(f"JWT Error: User ID {user_id} is inactive")
+                print(f"JWT Error: User ID {current_user.id} is inactive")
                 return jsonify({'error': 'User account is inactive'}), 401
 
             # Add current_user to kwargs
@@ -113,6 +125,10 @@ def require_manager_or_owner():
 def require_staff():
     """Decorator to require any staff role (not customer)"""
     return require_role('owner', 'branch_manager', 'receptionist', 'accountant')
+
+def require_customer():
+    """Decorator to require customer role"""
+    return require_role('customer')
 
 def require_receptionist_or_above():
     """Decorator to require receptionist level access or above"""

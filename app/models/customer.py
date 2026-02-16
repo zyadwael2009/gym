@@ -134,7 +134,8 @@ class Customer(db.Model):
             'fitness_goals': self.fitness_goals,
             'joined_date': self.joined_date.isoformat() if self.joined_date else None,
             'is_active': self.is_active,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else self.created_at.isoformat()
         }
         
         if include_health:

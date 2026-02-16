@@ -23,46 +23,60 @@ def generate_payment_number():
 @validate_json_request('customer_id', 'amount', 'payment_method')
 def create_payment(current_user):
     """Create new payment"""
-    data = request.get_json()
-    
-    # Validate customer
-    customer = Customer.query.get(data['customer_id'])
-    if not customer:
-        return jsonify({'error': 'Customer not found'}), 404
-    
-    # Check branch access
-    if not current_user.has_branch_access(customer.branch_id):
-        return jsonify({'error': 'Access denied for customer branch'}), 403
-    
-    # Validate subscription if provided
-    subscription = None
-    if data.get('subscription_id'):
-        subscription = Subscription.query.get(data['subscription_id'])
-        if not subscription or subscription.customer_id != customer.id:
-            return jsonify({'error': 'Invalid subscription for this customer'}), 400
-    
-    # Generate payment number
-    payment_number = generate_payment_number()
-    while Payment.query.filter_by(payment_number=payment_number).first():
-        payment_number = generate_payment_number()
-    
-    # Create payment
-    payment = Payment(
-        payment_number=payment_number,
-        amount=data['amount'],
-        payment_method=data['payment_method'],
-        customer_id=data['customer_id'],
-        subscription_id=data.get('subscription_id'),
-        branch_id=customer.branch_id,
-        service_type=data.get('service_type', 'subscription'),
-        description=data.get('description'),
-        reference_number=data.get('reference_number'),
-        processed_by_id=current_user.id
-    )
-    
     try:
+        data = request.get_json()
+        print(f"[PAYMENT DEBUG] Received payment request from user: {current_user.username}")
+        print(f"[PAYMENT DEBUG] Request data: {data}")
+        
+        # Validate customer
+        customer = Customer.query.get(data['customer_id'])
+        if not customer:
+            print(f"[PAYMENT DEBUG] Customer not found: {data['customer_id']}")
+            return jsonify({'error': 'Customer not found'}), 404
+        
+        print(f"[PAYMENT DEBUG] Found customer: {customer.member_id}, branch: {customer.branch_id}")
+        
+        # Check branch access
+        if not current_user.has_branch_access(customer.branch_id):
+            print(f"[PAYMENT DEBUG] Access denied for branch {customer.branch_id}")
+            return jsonify({'error': 'Access denied for customer branch'}), 403
+        
+        # Validate subscription if provided
+        subscription = None
+        if data.get('subscription_id'):
+            subscription = Subscription.query.get(data['subscription_id'])
+            if not subscription or subscription.customer_id != customer.id:
+                print(f"[PAYMENT DEBUG] Invalid subscription {data.get('subscription_id')} for customer {customer.id}")
+                return jsonify({'error': 'Invalid subscription for this customer'}), 400
+            print(f"[PAYMENT DEBUG] Found subscription: {subscription.subscription_number}")
+        
+        # Generate payment number
+        payment_number = generate_payment_number()
+        while Payment.query.filter_by(payment_number=payment_number).first():
+            payment_number = generate_payment_number()
+        
+        print(f"[PAYMENT DEBUG] Generated payment number: {payment_number}")
+        
+        # Create payment
+        payment = Payment(
+            payment_number=payment_number,
+            amount=data['amount'],
+            payment_method=data['payment_method'],
+            customer_id=data['customer_id'],
+            subscription_id=data.get('subscription_id'),
+            branch_id=customer.branch_id,
+            service_type=data.get('service_type', 'subscription'),
+            description=data.get('description'),
+            reference_number=data.get('reference_number'),
+            processed_by_id=current_user.id
+        )
+        
+        print(f"[PAYMENT DEBUG] Created payment object, attempting to save...")
+        
         db.session.add(payment)
         db.session.flush()  # Get payment ID
+        
+        print(f"[PAYMENT DEBUG] Payment saved with ID: {payment.id}")
         
         # Create audit log
         audit_log = PaymentAuditLog(
@@ -75,7 +89,11 @@ def create_payment(current_user):
         )
         db.session.add(audit_log)
         
+        print(f"[PAYMENT DEBUG] Audit log created, committing...")
+        
         db.session.commit()
+        
+        print(f"[PAYMENT DEBUG] Payment created successfully!")
         
         return jsonify({
             'message': 'Payment created successfully',
@@ -84,7 +102,7 @@ def create_payment(current_user):
     
     except Exception as e:
         db.session.rollback()
-        print(f"Error creating payment: {type(e).__name__}: {str(e)}")
+        print(f"[PAYMENT ERROR] {type(e).__name__}: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': 'Failed to create payment', 'details': str(e)}), 500

@@ -35,6 +35,8 @@ def create_app(config_class=Config):
     
     # Register blueprints
     from app.api import auth_bp, branch_bp, customer_bp, subscription_bp, payment_bp, attendance_bp, dashboard_bp, complaint_bp
+    from app.api.paymob import paymob_bp
+    from app.api.paymob_demo import demo_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(branch_bp, url_prefix='/api/branches')
@@ -44,6 +46,8 @@ def create_app(config_class=Config):
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
     app.register_blueprint(complaint_bp, url_prefix='/api/complaints')
+    app.register_blueprint(paymob_bp, url_prefix='/api/paymob')
+    app.register_blueprint(demo_bp, url_prefix='/api/paymob')
 
     # Register test pages (optional - only for development)
     try:

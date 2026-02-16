@@ -215,3 +215,91 @@ def list_users():
         'users': [user.to_dict() for user in users],
         'total': len(users)
     }), 200
+
+@auth_bp.route('/customer/login', methods=['POST'])
+@validate_json_request('email', 'password')
+def customer_login():
+    """Customer login endpoint"""
+    from app.models.customer import Customer
+    from app.models.user import User
+    
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    # Find user by email with customer role
+    user = User.query.filter_by(email=email, role='customer').first()
+    
+    if not user:
+        return jsonify({'error': 'Invalid credentials', 'message': 'العميل غير موجود'}), 401
+    
+    # Check password
+    if not user.check_password(password):
+        return jsonify({'error': 'Invalid credentials', 'message': 'كلمة المرور غير صحيحة'}), 401
+    
+    if not user.is_active:
+        return jsonify({'error': 'Account is inactive', 'message': 'الحساب غير نشط'}), 401
+    
+    # Get customer profile
+    customer = Customer.query.filter_by(user_id=user.id).first()
+    if not customer:
+        return jsonify({'error': 'Customer profile not found', 'message': 'ملف العميل غير موجود'}), 401
+    
+    # Update last login time
+    try:
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+    except Exception as e:
+        print(f"Warning: Could not update customer login info: {e}")
+    
+    # Create tokens for customer
+    access_token = create_access_token(identity=f"customer_{customer.id}")
+    refresh_token = create_refresh_token(identity=f"customer_{customer.id}")
+
+    return jsonify({
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+        'customer': customer.to_dict(),
+        'user': user.to_dict(),
+        'message': 'تم تسجيل الدخول بنجاح'
+    }), 200
+
+@auth_bp.route('/customer/register', methods=['POST'])
+@validate_json_request('name', 'email', 'phone')
+def customer_register():
+    """Customer registration endpoint"""
+    from app.models.customer import Customer
+    
+    data = request.get_json()
+    
+    # Check if email already exists
+    if Customer.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists', 'message': 'البريد الإلكتروني مسجل مسبقاً'}), 400
+    
+    # Create new customer
+    customer = Customer(
+        name=data['name'],
+        email=data['email'],
+        phone=data['phone'],
+        address=data.get('address'),
+        date_of_birth=data.get('date_of_birth'),
+        emergency_contact=data.get('emergency_contact'),
+        notes=data.get('notes')
+    )
+    
+    try:
+        db.session.add(customer)
+        db.session.commit()
+        
+        # Create access token
+        access_token = create_access_token(identity=f"customer_{customer.id}")
+        
+        return jsonify({
+            'message': 'تم التسجيل بنجاح',
+            'customer': customer.to_dict(),
+            'access_token': access_token
+        }), 201
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Registration failed', 'message': f'فشل في التسجيل: {str(e)}'}), 500

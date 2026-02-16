@@ -1,0 +1,7 @@
+=== LOGIN CREDENTIALS ===
+Username: owner, Role: owner, Password: password123
+Username: manager, Role: branch_manager, Password: password123
+Username: receptionist, Role: receptionist, Password: password123
+Username: accountant, Role: accountant, Password: password123
+Username: customer, Role: customer, Password: password123
+Username: customer_test, Role: customer, Password: password123
