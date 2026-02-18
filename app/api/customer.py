@@ -366,8 +366,8 @@ def generate_qr():
         # For now, just return the QR data
         qr_data = {
             'customer_id': customer.id,
-            'customer_name': customer.name,
-            'customer_email': customer.email,
+            'customer_name': f"{customer.user.first_name} {customer.user.last_name}" if customer.user else 'Unknown',
+            'customer_email': customer.user.email if customer.user else None,
             'session_id': data.get('session_id'),
             'generated_at': data.get('generated_at'),
             'expires_at': data.get('expires_at'),

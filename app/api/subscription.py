@@ -6,6 +6,7 @@ from app.models.subscription import SubscriptionPlan, Subscription, Subscription
 from app.models.customer import Customer
 from app.models.branch import Branch
 from app.auth import require_staff, require_receptionist_or_above, require_owner, validate_json_request
+from flask_jwt_extended import jwt_required
 import secrets
 import string
 
@@ -17,6 +18,18 @@ def generate_subscription_number(branch_code):
     date_part = today.strftime('%y%m%d')
     random_part = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
     return f"SUB{branch_code}{date_part}{random_part}"
+
+# Public endpoint for customers to view available plans
+@subscription_bp.route('/plans/public', methods=['GET'])
+@jwt_required()
+def list_public_plans():
+    """List all active subscription plans (accessible by customers)"""
+    plans = SubscriptionPlan.query.filter_by(is_active=True).all()
+    
+    return jsonify({
+        'plans': [plan.to_dict() for plan in plans],
+        'total': len(plans)
+    }), 200
 
 # Subscription Plans
 @subscription_bp.route('/plans', methods=['GET'])

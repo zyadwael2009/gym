@@ -3,8 +3,10 @@ from flask import Blueprint, request, jsonify
 from app.database import db
 from app.models.customer import Customer
 from app.models.subscription import Subscription
+from app.models.branch import Branch
 from app.models.payment import Payment
 from app.services.paymob_service import PaymobService
+from app.api.subscription import generate_subscription_number
 from app.auth import require_customer, require_staff
 from datetime import datetime
 
@@ -149,18 +151,32 @@ def payment_callback():
                     plan_duration = int(parts[0].split(':')[1])
                     plan_name = parts[1].split(':')[1] if len(parts) > 1 else 'Subscription'
                     
+                    # Generate subscription number
+                    branch = None
+                    if payment.branch_id:
+                        branch = Branch.query.get(payment.branch_id)
+                    branch_code = branch.code if branch else 'GEN'
+                    sub_number = generate_subscription_number(branch_code)
+                    
+                    # Find a suitable plan_id (first active plan or create a default)
+                    from app.models.subscription import SubscriptionPlan
+                    plan = SubscriptionPlan.query.filter_by(is_active=True).first()
+                    plan_id = plan.id if plan else 1
+                    
                     # Create new subscription
                     from datetime import timedelta
+                    from datetime import date as date_type
                     subscription = Subscription(
                         customer_id=payment.customer_id,
-                        plan_id=None,  # No plan_id for custom Paymob subscriptions
-                        start_date=date.today(),
-                        end_date=date.today() + timedelta(days=plan_duration),
-                        amount_paid=payment.amount,
-                        payment_method='online',
+                        plan_id=plan_id,
+                        branch_id=payment.branch_id or 1,
+                        subscription_number=sub_number,
+                        start_date=date_type.today(),
+                        end_date=date_type.today() + timedelta(days=plan_duration),
+                        actual_price=payment.amount,
                         status='active',
-                        is_active=True,
-                        notes=f'Paymob payment - {plan_name}'
+                        created_by_id=payment.processed_by_id or 1,
+                        auto_renew=False,
                     )
                     db.session.add(subscription)
                     db.session.flush()
@@ -173,8 +189,9 @@ def payment_callback():
                     import traceback
                     traceback.print_exc()
         else:
-            payment.status = 'failed'
-            print(f"[PAYMOB] Payment failed for order {transaction_info['order_id']}")
+            # Payment failed - delete the pending payment record
+            print(f"[PAYMOB] Payment failed for order {transaction_info['order_id']} - deleting record")
+            db.session.delete(payment)
         
         db.session.commit()
         

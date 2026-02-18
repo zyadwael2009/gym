@@ -108,7 +108,20 @@ def register():
 def change_password():
     """Change user password"""
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    
+    # Handle customer JWT identity format "customer_X"
+    user = None
+    if isinstance(current_user_id, str) and current_user_id.startswith('customer_'):
+        from app.models.customer import Customer
+        try:
+            customer_id = int(current_user_id.split('_')[1])
+            customer = Customer.query.get(customer_id)
+            if customer and customer.user_id:
+                user = User.query.get(customer.user_id)
+        except (ValueError, IndexError):
+            pass
+    else:
+        user = User.query.get(current_user_id)
     
     if not user:
         return jsonify({'error': 'User not found'}), 404
