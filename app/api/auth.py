@@ -42,6 +42,11 @@ def login():
         'message': 'Login successful'
     }), 200
 
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    """Logout - client should discard the token"""
+    return jsonify({'message': 'Logged out successfully'}), 200
+
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
